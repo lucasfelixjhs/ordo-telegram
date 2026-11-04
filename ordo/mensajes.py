@@ -82,6 +82,18 @@ def lista_y(items: list[str], conj="o") -> str:
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + f" {conj} " + items[-1]
 
 
+def _fecha_flexible(s: str) -> date | None:
+    """Acepta 2026-12-08, 08/12/2026, 8/12/26."""
+    s = (s or "").strip()
+    try:
+        if "-" in s:
+            return date.fromisoformat(s[:10])
+        d, m, y = [int(x) for x in s.split("/")[:3]]
+        return date(y + 2000 if y < 100 else y, m, d)
+    except (ValueError, TypeError):
+        return None
+
+
 class Redactor:
     def __init__(self, ordo: Ordo, config: dict):
         self.ordo = ordo
@@ -311,5 +323,67 @@ class Redactor:
                         out.append(Mensaje(d, cuando, f"<b><u>{etiqueta}:</u></b>\n\n{txt}", img,
                                            f"{d.isoformat()}#{cod}", vis))
             d += timedelta(days=1)
+        out = self._aplicar_cambios(out, desde, hasta)
         out.sort(key=lambda m: m.envio)
         return out
+
+    # ---------------------------------------------------------------- cambios puntuales (pestaña de la planilla)
+    def _cambios(self) -> list[dict]:
+        import csv
+        from .hoja import id_imagen
+        p = self.ordo.base / "data" / "cambios.csv"
+        if not p.exists():
+            return []
+        out = []
+        for r in csv.DictReader(open(p, encoding="utf-8")):
+            f = _fecha_flexible(r.get("fecha", ""))
+            acc = (r.get("accion") or "").strip().lower().replace(" ", "_")
+            if f and acc:
+                r["_fecha"], r["_accion"] = f, acc
+                img = (r.get("imagen") or "").strip()
+                r["_imagen"] = None if img.lower() in ("ninguna", "sin imagen", "no") else (id_imagen(img) or "")
+                out.append(r)
+        return out
+
+    def _aplicar_cambios(self, msgs: list[Mensaje], desde: date, hasta: date) -> list[Mensaje]:
+        cambios = [c for c in self._cambios() if desde <= c["_fecha"] <= hasta]
+        if not cambios:
+            return msgs
+        res = list(msgs)
+        for i, c in enumerate(cambios):
+            cal = (c.get("calendario") or "").strip().upper()
+            cal = {"ARGENTINA": "ARG", "PARAGUAY": "PGY", "OTROS PAÍSES": "OTROS", "TODOS": ""}.get(cal, cal)
+
+            def aplica(m):
+                if m.dia != c["_fecha"]:
+                    return False
+                if not cal or "#" not in m.clave:
+                    return True
+                return cal in m.clave.split("#", 1)[1].upper().split("+")
+
+            texto = (c.get("texto") or "").strip()
+            acc = c["_accion"]
+            if acc == "omitir":
+                res = [m for m in res if not aplica(m)]
+            elif acc in ("reemplazar_texto", "reemplazar"):
+                for m in res:
+                    if aplica(m) and texto:
+                        cab = m.texto.split("\n\n", 1)[0] + "\n\n" if m.texto.startswith("<b><u>") else ""
+                        m.texto = cab + texto
+            elif acc in ("agregar_nota", "nota"):
+                for m in res:
+                    if aplica(m) and texto:
+                        partes = m.texto.split("\n\n<blockquote")
+                        m.texto = partes[0] + "\n\n" + texto + ("\n\n<blockquote" + partes[1] if len(partes) > 1 else "")
+            elif acc in ("cambiar_imagen", "imagen"):
+                for m in res:
+                    if aplica(m) and c["_imagen"] is not False:
+                        m.imagen = c["_imagen"] or None
+            elif acc in ("mensaje_extra", "extra"):
+                try:
+                    h = time.fromisoformat((c.get("hora") or "").strip() or "00:10")
+                except ValueError:
+                    h = self.h_dia
+                res.append(Mensaje(c["_fecha"], datetime.combine(c["_fecha"], h, tzinfo=self.tz), texto,
+                                   c["_imagen"] or None, f"{c['_fecha'].isoformat()}#extra{i + 1}", False))
+        return res

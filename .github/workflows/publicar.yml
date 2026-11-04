@@ -1,0 +1,48 @@
+name: Publicar en el canal
+
+on:
+  schedule:
+    # GitHub usa hora UTC. Argentina/Paraguay = UTC-3.
+    # Arranca unos minutos antes y el script espera hasta la hora exacta.
+    - cron: "40 2 * * *"    # 23:40 → publica a las 00:10
+    - cron: "30 20 * * *"   # 17:30 → publica a las 18:00 (solo si hay I Vísperas)
+  workflow_dispatch:
+    inputs:
+      probar_fecha:
+        description: "Enviar al chat de PRUEBA el mensaje de esta fecha (AAAA-MM-DD). Vacío = publicación normal."
+        required: false
+
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Publicar
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_CHAT_ID_PRUEBA: ${{ secrets.TELEGRAM_CHAT_ID_PRUEBA }}
+        run: |
+          if [ -n "${{ github.event.inputs.probar_fecha }}" ]; then
+            python -m ordo probar "${{ github.event.inputs.probar_fecha }}"
+          else
+            python -m ordo publicar
+          fi
+      - name: Guardar registro de envíos
+        run: |
+          git config user.name "ordo-bot"
+          git config user.email "ordo-bot@users.noreply.github.com"
+          git add estado/ || true
+          git diff --cached --quiet || (git commit -m "Registro de envíos $(date -u +%F)" && git push)

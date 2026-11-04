@@ -1,0 +1,39 @@
+# Configuración del calendario litúrgico automático del canal.
+# Después de editar este archivo, el próximo envío ya usa los valores nuevos.
+
+[calendario]
+# Versión universal: cuando un calendario nacional difiere del general (CRG + ADF), ese día se
+# publica un mensaje por calendario: «En Argentina:», «En Paraguay:», «Otros países:».
+# Si todos coinciden, sale un solo mensaje sin encabezado. Para sumar Brasil (Aparecida): agregar "BRS".
+regiones = ["ARG", "PGY"]
+nombres_regiones = { ARG = "Argentina", PGY = "Paraguay", BRS = "Brasil" }
+
+# Bautismo del Señor: "domingo" (domingo después de la Epifanía, regla del Ordo)
+# o "13-enero" (uso de la Forma extraordinaria).
+bautismo = "domingo"
+
+# Trasladar al domingo siguiente (como en ARG/PGY por precepto). El Ordo ADF las mantiene en su día.
+epifania_en_domingo = false
+ascension_en_domingo = false
+corpus_en_domingo = false
+
+# Nuestra Señora de los Dolores: viernes de la V semana de Cuaresma (-9 días de Pascua)
+dolores_dias_antes_de_pascua = 9
+
+[horarios]
+zona_horaria = "America/Argentina/Buenos_Aires"
+hora_diaria = "00:10"          # mensaje del día
+hora_primeras_visperas = "18:00" # el día anterior, cuando el día siguiente tiene I Vísperas
+
+[publicacion]
+# Qué días se publican además de solemnidades, fiestas, domingos y memorias:
+ferias_17_24_diciembre = true    # ferias privilegiadas con la antífona «O»
+octava_de_pascua = true
+semana_santa = true
+ferias_de_cuaresma_con_conmemoracion = true
+memorias_libres = true           # en ferias, "puede celebrarse la Memoria libre de..."
+sabado_mariano = false           # Memoria libre de Santa María en sábado (Tiempo Ordinario)
+
+# Imágenes: "rotar" usa una opción distinta cada año entre las disponibles;
+# "primera" usa siempre la primera. En ambos casos la columna imagen_fija tiene prioridad.
+modo_imagen = "rotar"

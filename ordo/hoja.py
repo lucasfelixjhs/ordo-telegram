@@ -78,6 +78,8 @@ def sincronizar(base: Path, sheet_id: str) -> list[str]:
 
     try:
         filas = [f for f in _bajar(sheet_id, "Móviles") if f.get("clave")]
+        if len(filas) < 10:
+            raise RuntimeError(f"la pestaña Móviles tiene solo {len(filas)} filas")
         for f in filas:
             f["imagen_fija"] = id_imagen(f.get("imagen_fija", ""))
             f["imagenes"] = ids_imagenes(f.get("imagenes", ""))
@@ -86,7 +88,10 @@ def sincronizar(base: Path, sheet_id: str) -> list[str]:
         avisos.append(f"Móviles: no se pudo leer la planilla ({ex}); se usan los datos guardados")
 
     try:
-        filas = [f for f in _bajar(sheet_id, "Cambios puntuales") if f.get("fecha") and f.get("accion")]
+        crudo = _bajar(sheet_id, "Cambios puntuales")
+        if crudo and "accion" not in crudo[0]:
+            raise RuntimeError("faltan los encabezados de la pestaña")
+        filas = [f for f in crudo if f.get("fecha") and f.get("accion")]
         _escribir(data / "cambios.csv", ["fecha", "calendario", "accion", "texto", "imagen", "hora", "comentario"],
                   filas)
     except Exception as ex:  # noqa: BLE001

@@ -6,6 +6,7 @@ on:
     # Arranca unos minutos antes y el script espera hasta la hora exacta.
     - cron: "40 2 * * *"    # 23:40 → publica a las 00:10
     - cron: "30 20 * * *"   # 17:30 → publica a las 18:00 (solo si hay I Vísperas)
+    - cron: "0 15 * * *"    # 12:00 → adelanto de las próximas 24 h en el canal de control
   workflow_dispatch:
     inputs:
       probar_fecha:
@@ -37,12 +38,16 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.probar_fecha }}" ]; then
             python -m ordo probar "${{ github.event.inputs.probar_fecha }}"
+          elif [ "${{ github.event.schedule }}" = "0 15 * * *" ]; then
+            python -m ordo adelanto
           else
             python -m ordo publicar
           fi
       - name: Guardar registro de envíos
+        if: always()
         run: |
           git config user.name "ordo-bot"
           git config user.email "ordo-bot@users.noreply.github.com"
-          git add estado/ || true
+          python -m ordo proximos || true
+          git add estado/ data/ || true
           git diff --cached --quiet || (git commit -m "Registro de envíos $(date -u +%F)" && git push)

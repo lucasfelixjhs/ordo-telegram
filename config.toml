@@ -37,3 +37,8 @@ sabado_mariano = false           # Memoria libre de Santa María en sábado (Tie
 # Imágenes: "rotar" usa una opción distinta cada año entre las disponibles;
 # "primera" usa siempre la primera. En ambos casos la columna imagen_fija tiene prioridad.
 modo_imagen = "rotar"
+
+[planilla]
+# Planilla «Ordo – Panel de control» (Google Drive → Proyectos → Ordo litúrgico automatizado).
+# Antes de cada envío se leen sus pestañas Santoral, Móviles y Cambios puntuales.
+id = "1a6nVPcVWiSb0nMptDviU9_WYx0j0wbvhXRa67275rkg"

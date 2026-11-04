@@ -41,7 +41,17 @@ Las ferias sin celebración no se publican. Todo esto se ajusta en `config.toml`
 > Las imágenes se toman de la carpeta pública de Drive «04. Santoral» por su ID. Si un archivo deja de ser público,
 > el mensaje se publica igual, sin imagen.
 
-## Cómo modificar
+## Panel de control (Google Sheets)
+
+Todo se edita en la planilla **«Ordo – Panel de control»** (Google Drive → Proyectos → Ordo litúrgico automatizado):
+https://docs.google.com/spreadsheets/d/1a6nVPcVWiSb0nMptDviU9_WYx0j0wbvhXRa67275rkg/edit
+
+Antes de cada envío el sistema lee las pestañas **Santoral**, **Móviles** y **Cambios puntuales** y guarda una copia en `data/`
+(historial y respaldo: si la planilla falla, se usan los últimos datos guardados). Las pestañas **Próximos envíos** y
+**Registro** se llenan solas desde `estado/proximos.tsv` y `estado/registro.tsv`. A las 12:00 el bot manda al canal de
+control (`TELEGRAM_CHAT_ID_PRUEBA`) un adelanto de lo que se publicará en las próximas 24 horas.
+
+## Cómo modificar (sin planilla, directamente en el repositorio)
 
 | Quiero… | Dónde |
 |---|---|

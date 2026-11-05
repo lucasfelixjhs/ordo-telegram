@@ -341,9 +341,11 @@ class Redactor:
 
     def _votiva(self, dl: DiaLiturgico):
         """Primer jueves, viernes y sábado del mes, si no hay fiesta, solemnidad ni día privilegiado
-        (precedencia 1-13). Afecta la Misa, no el Oficio."""
+        (precedencia 1-13) y fuera del Tiempo de Navidad. Afecta la Misa, no el Oficio."""
         d = dl.fecha
         if d.day > 7 or d.weekday() not in self.VOTIVAS or dl.principal.precedencia <= 13:
+            return None
+        if dl.tiempo == "Navidad":          # en el Tiempo de Navidad no se celebran
             return None
         dia, clave, misa = self.VOTIVAS[d.weekday()]
         texto = f"Hoy es el <b>primer {dia} del mes</b>.\nSe celebra la Misa votiva privilegiada {misa}."

@@ -33,6 +33,7 @@ semana_santa = true
 ferias_de_cuaresma_con_conmemoracion = true
 memorias_libres = true           # en ferias, "puede celebrarse la Memoria libre de..."
 sabado_mariano = false           # Memoria libre de Santa María en sábado (Tiempo Ordinario)
+votivas_privilegiadas = true     # 1.er jueves, viernes y sábado del mes (después del mensaje del día)
 ferias = true                    # también las ferias sin celebración («Feria: miércoles de la XIV semana…»)
 
 # Imágenes: "rotar" usa una opción distinta cada año entre las disponibles;

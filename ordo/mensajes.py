@@ -328,8 +328,49 @@ class Redactor:
                         out.append(Mensaje(d, cuando, f"<b><u>{etiqueta}:</u></b>\n\n{txt}", img,
                                            f"{d.isoformat()}#{cod}", vis))
             d += timedelta(days=1)
+        if self.pub.get("votivas_privilegiadas", True):
+            out += self._votivas(desde, hasta, variantes)
         out = self._aplicar_cambios(out, desde, hasta)
         out.sort(key=lambda m: m.envio)
+        return out
+
+    # ---------------------------------------------------------------- Misas votivas privilegiadas (Ordo ADF, n. 7)
+    VOTIVAS = {3: ("jueves", "votiva_jueves", "de <b>Jesucristo Sumo y Eterno Sacerdote</b>"),
+               4: ("viernes", "votiva_viernes", "del <b>Sagrado Corazón de Jesús</b>"),
+               5: ("sábado", "votiva_sabado", "del <b>Inmaculado Corazón de María</b>")}
+
+    def _votiva(self, dl: DiaLiturgico):
+        """Primer jueves, viernes y sábado del mes, si no hay fiesta, solemnidad ni día privilegiado
+        (precedencia 1-13). Afecta la Misa, no el Oficio."""
+        d = dl.fecha
+        if d.day > 7 or d.weekday() not in self.VOTIVAS or dl.principal.precedencia <= 13:
+            return None
+        dia, clave, misa = self.VOTIVAS[d.weekday()]
+        texto = f"Hoy es el <b>primer {dia} del mes</b>.\nSe celebra la Misa votiva privilegiada {misa}."
+        imgs = self.ordo.img_moviles.get(clave, [])
+        img = (imgs[0] if len(imgs) == 1 or self.pub.get("modo_imagen") == "primera"
+               else imgs[d.year % len(imgs)]) if imgs else None
+        return texto, img
+
+    def _votivas(self, desde, hasta, variantes) -> list[Mensaje]:
+        out = []
+        d = desde
+        while d <= hasta:
+            if d.day <= 7 and d.weekday() in self.VOTIVAS:
+                grupos: dict[tuple, list] = {}
+                for reg, o in variantes:
+                    v = self._votiva(o.dia(d))
+                    grupos.setdefault(v, []).append(reg)
+                cuando = datetime.combine(d, self.h_dia, tzinfo=self.tz) + timedelta(seconds=30)
+                validos = [(k, regs) for k, regs in grupos.items() if k]
+                for i, ((txt, img), regs) in enumerate(validos):
+                    if len(grupos) == 1:
+                        out.append(Mensaje(d, cuando, txt, img, f"{d.isoformat()}#votiva", False))
+                    else:
+                        etiqueta, cod = self._etiqueta(regs)
+                        out.append(Mensaje(d, cuando + timedelta(seconds=i), f"<b><u>{etiqueta}:</u></b>\n\n{txt}",
+                                           img, f"{d.isoformat()}#votiva+{cod}", False))
+            d += timedelta(days=1)
         return out
 
     # ---------------------------------------------------------------- cambios puntuales (pestaña de la planilla)

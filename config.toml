@@ -33,6 +33,7 @@ semana_santa = true
 ferias_de_cuaresma_con_conmemoracion = true
 memorias_libres = true           # en ferias, "puede celebrarse la Memoria libre de..."
 sabado_mariano = false           # Memoria libre de Santa María en sábado (Tiempo Ordinario)
+ferias = true                    # también las ferias sin celebración («Feria: miércoles de la XIV semana…»)
 
 # Imágenes: "rotar" usa una opción distinta cada año entre las disponibles;
 # "primera" usa siempre la primera. En ambos casos la columna imagen_fija tiene prioridad.

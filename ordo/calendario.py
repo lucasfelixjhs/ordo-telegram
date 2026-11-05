@@ -224,8 +224,9 @@ class Ordo:
                           else "Domingo después de la Epifanía")
                 return "Navidad", None, None, Celebracion(nombre, "Domingo", 10, temporal=True,
                                                            comun="del Propio del Tiempo"), []
-            return "Navidad", None, None, Celebracion(f"{dia.capitalize()} del Tiempo de Navidad", "Feria", 18,
-                                                      temporal=True), []
+            nombre = (f"{d.day} de enero, del Tiempo de Navidad" if d < k["epifania"]
+                      else f"{dia.capitalize()} después de la Epifanía")
+            return "Navidad", None, None, Celebracion(nombre, "Feria", 18, temporal=True, color="Blanco"), []
 
         # --- Navidad del año en curso (25-31 dic)
         if d.month == 12 and d.day >= 25:

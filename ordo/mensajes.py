@@ -123,7 +123,7 @@ class Redactor:
             return self.pub.get("memorias_libres", True)
         if self.pub.get("sabado_mariano") and dl.tiempo == "Ordinario" and dl.fecha.weekday() == 5:
             return True
-        return False
+        return bool(self.pub.get("ferias", False))
 
     # ---------------------------------------------------------------- imagen
     @staticmethod

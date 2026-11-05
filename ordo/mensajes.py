@@ -69,8 +69,13 @@ def comun_txt(comun: str) -> str:
 
 
 def horas_comun(comun: str) -> str:
-    """'del propio y del Común de X' -> 'del <b>propio</b> y del <b>Común de X</b>'."""
+    """'del propio y del Común de X' -> 'del <b>propio</b> y del <b>Común de X</b>'.
+
+    Regla del canal: salvo las celebraciones del Señor (que dicen solo «del propio»), siempre se indica primero
+    el propio y luego el común, porque muchas memorias tienen al menos la oración propia."""
     c = comun.strip() or "del propio"
+    if c.startswith("del Común"):
+        c = "del propio y " + c
     partes = [x[4:] if x.startswith("del ") else x for x in c.split(" y del ")]
     return "del " + " y del ".join(f"<b>{e(x)}</b>" for x in partes)
 

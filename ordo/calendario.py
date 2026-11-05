@@ -58,6 +58,12 @@ def adviento_1(y: int) -> date:
     return domingo_en_o_antes(date(y, 12, 3))
 
 
+def ciclo_dominical(d: date) -> str:
+    """Ciclo A, B o C del año litúrgico al que pertenece la fecha (comienza el I Domingo de Adviento)."""
+    fin = d.year + 1 if d >= adviento_1(d.year) else d.year
+    return {1: "A", 2: "B", 0: "C"}[fin % 3]
+
+
 @dataclass
 class Celebracion:
     nombre: str
@@ -111,6 +117,7 @@ class Ordo:
         self.dolores = int(cal.get("dolores_dias_antes_de_pascua", 9))
         self.santoral = self._leer_santoral()
         self.img_moviles = self._leer_moviles()
+        self.domingos = self._leer_domingos()
         self._cache: dict[int, dict[date, DiaLiturgico]] = {}
 
     # ------------------------------------------------------------------ datos
@@ -139,6 +146,13 @@ class Ordo:
                     biografia=r["biografia"].strip(), clave=r["fecha"])
                 out.setdefault(r["fecha"], []).append(c)
         return out
+
+    def _leer_domingos(self) -> dict[tuple[str, str], dict]:
+        p = self.base / "data" / "domingos.csv"
+        if not p.exists():
+            return {}
+        with open(p, encoding="utf-8") as f:
+            return {(r["clave"].strip().upper(), r["ciclo"].strip().upper()): r for r in csv.DictReader(f)}
 
     def _leer_moviles(self) -> dict[str, list[str]]:
         p = self.base / "data" / "moviles.csv"

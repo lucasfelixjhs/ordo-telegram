@@ -15,7 +15,7 @@ import requests
 
 EXPORT = "https://docs.google.com/spreadsheets/d/{id}/export?format=csv&gid={gid}"
 # Las pestañas se crearon con estos identificadores fijos (no cambian aunque se renombren).
-GID = {"Santoral": 1001, "Móviles": 1002, "Cambios puntuales": 1003}
+GID = {"Santoral": 1001, "Móviles": 1002, "Cambios puntuales": 1003, "Domingos": 1006}
 
 ID_DRIVE = re.compile(r"(?:/d/|id=)([\w-]{20,})")
 
@@ -86,6 +86,14 @@ def sincronizar(base: Path, sheet_id: str) -> list[str]:
         _escribir(data / "moviles.csv", ["clave", "descripcion", "imagenes", "imagen_fija", "biografia"], filas)
     except Exception as ex:  # noqa: BLE001
         avisos.append(f"Móviles: no se pudo leer la planilla ({ex}); se usan los datos guardados")
+
+    try:
+        filas = [f for f in _bajar(sheet_id, "Domingos") if f.get("clave") and f.get("ciclo")]
+        if len(filas) < 100:
+            raise RuntimeError(f"la pestaña Domingos tiene solo {len(filas)} filas")
+        _escribir(data / "domingos.csv", ["clave", "domingo", "ciclo", "imagen_fija", "imagenes", "nota"], filas)
+    except Exception as ex:  # noqa: BLE001
+        avisos.append(f"Domingos: no se pudo leer la planilla ({ex}); se usan los datos guardados")
 
     try:
         crudo = _bajar(sheet_id, "Cambios puntuales")

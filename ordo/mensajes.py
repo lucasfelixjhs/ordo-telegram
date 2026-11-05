@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from .calendario import MESES, Celebracion, DiaLiturgico, Ordo, romano
+from .calendario import MESES, Celebracion, DiaLiturgico, Ordo, ciclo_dominical, romano
 
 LIMITE_CAPTION = 1024
 DIAS_SAL = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
@@ -158,8 +158,43 @@ class Redactor:
                     "Navidad": "domingo_navidad"}.get(dl.tiempo, "domingo_ordinario")
         return ""
 
+    @staticmethod
+    def clave_domingo(dl: DiaLiturgico) -> str:
+        """Clave de la pestaña Domingos (ADV-1, TO-32, PASCUA…) si el día es un domingo del Propio del Tiempo."""
+        p = dl.principal
+        if not (dl.es_domingo and p.temporal):
+            return ""
+        fijas = {"sagrada_familia": "SAGRADA_FAMILIA", "bautismo": "BAUTISMO", "trinidad": "TRINIDAD",
+                 "cristo_rey": "CRISTO_REY", "corpus": "CORPUS"}
+        if p.clave in fijas:
+            return fijas[p.clave]
+        n = p.nombre
+        if n.startswith("Domingo de Ramos"):
+            return "RAMOS"
+        if n.startswith("Domingo de Pascua"):
+            return "PASCUA"
+        if n.startswith("Domingo de Pentecostés"):
+            return "PENTECOSTES"
+        if "después de Navidad" in n:
+            return "NAV-2"
+        pref = {"Adviento": "ADV", "Cuaresma": "CUA", "Pascua": "PAS", "Ordinario": "TO"}.get(dl.tiempo)
+        return f"{pref}-{dl.semana}" if pref and dl.semana else ""
+
+    def fila_domingo(self, dl: DiaLiturgico) -> dict | None:
+        k = self.clave_domingo(dl)
+        return self.ordo.domingos.get((k, ciclo_dominical(dl.fecha))) if k else None
+
     def imagen(self, dl: DiaLiturgico) -> str | None:
         p = dl.principal
+        fd = self.fila_domingo(dl)
+        if fd:
+            from .hoja import id_imagen, ids_imagenes
+            fija = id_imagen(fd.get("imagen_fija", ""))
+            if fija:
+                return fija
+            imgs = ids_imagenes(fd.get("imagenes", "")).split()
+            if imgs:
+                return imgs[0] if len(imgs) == 1 else imgs[dl.fecha.year % len(imgs)]
         if p.temporal and not p.imagenes and not dl.libres and not dl.conmemoraciones:
             imgs = self.ordo.img_moviles.get(self.clave_temporal(dl), [])
             if imgs:
@@ -268,6 +303,9 @@ class Redactor:
         partes.append(horas)
         partes += despues
         nota = (p.nota or "").strip()
+        fd = self.fila_domingo(dl)
+        if fd and (fd.get("nota") or "").strip():
+            nota = (nota + "\n\n" + fd["nota"].strip()).strip()
         if visperas and nota:
             partes.append(nota)
         elif nota:

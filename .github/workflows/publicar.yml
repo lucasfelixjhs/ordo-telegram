@@ -12,6 +12,10 @@ on:
       probar_fecha:
         description: "Enviar al chat de PRUEBA el mensaje de esta fecha (AAAA-MM-DD). Vacío = publicación normal."
         required: false
+      modo:
+        description: "publicar (normal) o adelanto (lo usa el Apps Script de la planilla)"
+        required: false
+        default: "publicar"
 
 concurrency:
   group: publicar
@@ -38,7 +42,7 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.probar_fecha }}" ]; then
             python -m ordo probar "${{ github.event.inputs.probar_fecha }}"
-          elif [ "${{ github.event.schedule }}" = "0 15 * * *" ]; then
+          elif [ "${{ github.event.schedule }}" = "0 15 * * *" ] || [ "${{ github.event.inputs.modo }}" = "adelanto" ]; then
             python -m ordo adelanto
           else
             python -m ordo publicar

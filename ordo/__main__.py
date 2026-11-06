@@ -157,6 +157,10 @@ def cmd_adelanto(args):
     cfg, ordo, red = cargar(sincronizar=True)
     escribir_proximos(red)
     ahora = datetime.now(red.tz)
+    marca = f"adelanto-{ahora.date().isoformat()}"
+    if marca in enviados():
+        print("El adelanto de hoy ya se envió.")
+        return
     ms = [m for m in red.mensajes(ahora.date(), ahora.date() + timedelta(days=2))
           if ahora < m.envio <= ahora + timedelta(hours=24)]
     tg = telegram(prueba=True)
@@ -166,6 +170,7 @@ def cmd_adelanto(args):
         tg.enviar(f"🔎 <b>Adelanto</b> — se publicará el {DIAS_C[m.envio.weekday()]} {m.envio:%d/%m a las %H:%M}:"
                   f"\n\n{m.texto}", m.imagen)
         registrar(m.dia, m.clave, "control", "adelanto enviado")
+    marcar(marca)
 
 
 def cmd_probar(args):

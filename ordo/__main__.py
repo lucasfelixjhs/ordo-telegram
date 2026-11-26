@@ -67,6 +67,19 @@ def enviados() -> set[str]:
     return set(ESTADO.read_text().split()) if ESTADO.exists() else set()
 
 
+def enviados_en_github() -> set[str]:
+    """Lee estado/enviados.txt de la última versión de main, por si otra ejecución publicó mientras esperábamos."""
+    import subprocess
+    try:
+        subprocess.run(["git", "-C", str(BASE), "fetch", "--quiet", "origin", "main"], check=True, timeout=60)
+        r = subprocess.run(["git", "-C", str(BASE), "show", "origin/main:estado/enviados.txt"],
+                           capture_output=True, text=True, check=True, timeout=30)
+        return set(r.stdout.split())
+    except Exception as ex:  # noqa: BLE001 - sin git (uso local) se sigue con el registro local
+        print(f"  (no se pudo consultar el registro en GitHub: {ex})")
+        return set()
+
+
 def marcar(clave: str) -> None:
     ESTADO.parent.mkdir(exist_ok=True)
     with open(ESTADO, "a") as f:
@@ -103,6 +116,9 @@ def cmd_publicar(args):
         if falta > 0:
             print(f"Esperando {int(falta)} s hasta las {m.envio:%H:%M} para publicar {m.clave}…")
             time.sleep(falta)
+        if m.clave in enviados() | enviados_en_github():
+            print(f"{m.clave} ya lo publicó otra ejecución: no se repite.")
+            continue
         try:
             tg.enviar(m.texto, m.imagen)
         except Exception as ex:  # noqa: BLE001
